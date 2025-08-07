@@ -18,7 +18,7 @@ jobs:
 
     strategy:
       matrix:
-        service: [vote, worker, result]
+        service: [voting, worker, result]
 
     steps:
       - uses: actions/checkout@v4
