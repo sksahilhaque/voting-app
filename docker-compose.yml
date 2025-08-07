@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - 5432:5432
+
+  redis:
+    image: redis:alpine
+
+  vote:
+    build: ./vote
+    ports:
+      - "5005:80"
+    depends_on:
+      - redis
+
+  result:
+    build: ./result
+    environment:
+      POSTGRES_CONN_STRING: postgres://postgres:postgres@db:5432/postgres
+      REDIS_HOST: redis
+    depends_on:
+      - db
+      - redis
+
+  worker:
+    build: ./worker
+    environment:
+      POSTGRES_CONN_STRING: postgres://postgres:postgres@db:5432/postgres
+      REDIS_HOST: redis
+    depends_on:
+      - db
+      - redis
