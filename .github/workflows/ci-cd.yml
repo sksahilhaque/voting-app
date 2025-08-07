@@ -18,7 +18,16 @@ jobs:
 
     strategy:
       matrix:
-        service: [vote, worker, result]
+        include:
+          - service: vote
+            repo: voting-app
+            ecs_service: voting-app-service
+          - service: worker
+            repo: worker-app
+            ecs_service: worker-app-service
+          - service: result
+            repo: result-app
+            ecs_service: result-app-service
 
     steps:
       - uses: actions/checkout@v4
@@ -38,11 +47,11 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
         run: |
           cd ${{ matrix.service }}
-          docker build -t $ECR_REGISTRY/${{ matrix.service }}-app:$IMAGE_TAG .
-          docker build -t $ECR_REGISTRY/${{ matrix.service }}-app:latest .
-          docker push $ECR_REGISTRY/${{ matrix.service }}-app:$IMAGE_TAG
-          docker push $ECR_REGISTRY/${{ matrix.service }}-app:latest
+          docker build -t $ECR_REGISTRY/${{ matrix.repo }}:$IMAGE_TAG .
+          docker build -t $ECR_REGISTRY/${{ matrix.repo }}:latest .
+          docker push $ECR_REGISTRY/${{ matrix.repo }}:$IMAGE_TAG
+          docker push $ECR_REGISTRY/${{ matrix.repo }}:latest
 
       - name: Update ECS Service
         run: |
-          aws ecs update-service --cluster $ECS_CLUSTER --service ${{ matrix.service }}-app-service --force-new-deployment
+          aws ecs update-service --cluster $ECS_CLUSTER --service ${{ matrix.ecs_service }} --force-new-deployment
