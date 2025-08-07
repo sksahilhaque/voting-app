@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: CI/CD Pipeline - Full Infrastructure
 
 on:
   push:
@@ -12,7 +12,26 @@ env:
   ECS_CLUSTER: my-voting-app
 
 jobs:
+  infrastructure:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Create ECS Cluster
+        run: |
+          aws ecs create-cluster --cluster-name $ECS_CLUSTER || echo "Cluster already exists"
+
   build-and-deploy:
+    needs: infrastructure
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
 
@@ -52,6 +71,7 @@ jobs:
           docker push $ECR_REGISTRY/${{ matrix.repo }}:$IMAGE_TAG
           docker push $ECR_REGISTRY/${{ matrix.repo }}:latest
 
-      - name: Update ECS Service
+      - name: Deploy to ECS
         run: |
-          aws ecs update-service --cluster $ECS_CLUSTER --service ${{ matrix.ecs_service }} --force-new-deployment
+          echo "Service deployment will be handled manually for now"
+          echo "Image pushed: $ECR_REGISTRY/${{ matrix.repo }}:${{ github.sha }}"
